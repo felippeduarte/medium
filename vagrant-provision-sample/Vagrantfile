@@ -1,0 +1,52 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+$script = <<SCRIPT
+
+echo -e "\n--- Atualizando pacotes ---\n"
+sudo apt-get -qq update
+
+#Variáveis para o MySQL - Apenas para máquina de desenvolvimento
+#Altere para os dados que achar relevante
+DBHOST=localhost
+DBNAME=dbname
+DBUSER=dbuser
+DBPASSWD=dbpass
+
+echo -e "\n--- Instalando e configurando MySQL ---\n"
+debconf-set-selections <<< "mysql-server mysql-server/root_password password $DBPASSWD"
+debconf-set-selections <<< "mysql-server mysql-server/root_password_again password $DBPASSWD"
+sudo apt-get -y install mysql-server
+
+mysql -uroot -p$DBPASSWD -e "CREATE DATABASE $DBNAME"
+mysql -uroot -p$DBPASSWD -e "grant all privileges on $DBNAME.* to '$DBUSER'@'%' identified by '$DBPASSWD'"
+
+systemctl enable mysql
+
+sed -i "s/bind-address.*/bind-address = 0.0.0.0/" /etc/mysql/mysql.conf.d/mysqld.cnf
+sudo service mysql restart
+
+echo -e "\n--- Instalando Apache 2 ---\n"
+sudo apt-get install -y apache2
+
+echo -e "\n--- Definindo diretório público ---\n"
+rm -rf /var/www/html
+ln -fs /vagrant /var/www/html
+
+echo -e "\n--- Instalando o PHP ---\n"
+sudo apt-get install -y php7.0 libapache2-mod-php7.0 php7.0-cli php7.0-common php7.0-mbstring php7.0-gd php7.0-intl php7.0-xml php7.0-mysql php7.0-mcrypt php7.0-zip
+
+echo -e "\n--- Configurando PHP.ini ---\n"
+sed -i "s/error_reporting = .*/error_reporting = E_ALL/" /etc/php/7.0/apache2/php.ini
+sed -i "s/display_errors = .*/display_errors = On/" /etc/php/7.0/apache2/php.ini
+sudo service apache2 restart
+
+echo -e "\n--- Tudo pronto, hora do show! ---\n"
+SCRIPT
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/zesty64"
+  config.vm.network "forwarded_port", guest: 80, host: 8000 #apache
+  config.vm.network "forwarded_port", guest: 3306, host: 3306 #mysql
+  config.vm.provision "shell", inline: $script
+end
