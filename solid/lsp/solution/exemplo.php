@@ -56,6 +56,6 @@ class Parceiros
     {
         $doc = $pessoa->getDocumento();
         \DB::table('parceiros')->where('doc','=', $doc)->get();
-        ...
+        //...
     }
 }

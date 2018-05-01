@@ -1,0 +1,16 @@
+{
+    "folders":
+    [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "xdebug": {
+            "path_mapping": {
+                "/vagrant": "C:/Projects/medium/php-xdebug-vscode-vagrant"
+            },
+            "url": "http://localhost:8000"
+        }
+    }
+}
